@@ -2,6 +2,7 @@
 
 Hướng dẫn sử dụng
   1. Chuẩn bị dataset với định dạng:
+      ```angular2html
       Folder dataset
             folder ảnh
                   abc.png/.jpg
