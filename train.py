@@ -48,7 +48,7 @@ def evaluate(model, loader, loss_fn, device, threshold = 0.6):
             loss = loss_fn(y_pred, y)
             epoch_loss += loss.item()
 
-            threshold, iou = iou_pytorch(y_pred, y)
+            iou = iou_pytorch(y_pred, y)
 
             iou_arr.append(iou.cpu().numpy())
         mean_iou = np.mean(iou_arr)

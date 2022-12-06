@@ -8,7 +8,7 @@ import torch.nn.functional as F
 
 
 class DiceBCELoss(nn.Module):
-    def __init__(self, weight=None, size_average=True):
+    def __init__(self):
         super(DiceBCELoss, self).__init__()
 
     def forward(self, inputs, targets, smooth=1):
@@ -29,28 +29,22 @@ class DiceBCELoss(nn.Module):
     
     
 
-def iou_pytorch(outputs: torch.Tensor, labels: torch.Tensor, threshold = 0.6):
-    SMOOTH = 1e-6
+SMOOTH = 1e-6
 
-    # outputs = torch.tensor(outputs,  dtype=torch.int8)
+def iou_pytorch(outputs: torch.Tensor, labels: torch.Tensor, threshold = 0.5):
+    # You can comment out this line if you are passing tensors of equal shape
+    # But if you are passing output from UNet or something it will most probably
+    # be with the BATCH x 1 x H x W shape
 
+    outputs = outputs.squeeze(1)  # BATCH x 1 x H x W => BATCH x H x W
     outputs = torch.sigmoid(outputs)
-    outputs = outputs[0].squeeze()
-    outputs = (outputs > 0.5)
-    outputs = outputs*255
+    outputs = (outputs> threshold)
     outputs = outputs.to(dtype=torch.int8)
-
-    # labels = torch.tensor(labels,  dtype=torch.int8)
-    labels = labels[0].squeeze()
-    labels = labels*255
-    labels = labels.to(dtype=torch.int8)
-
-    intersection = torch.count_nonzero(outputs & labels)
-    union = torch.count_nonzero(outputs | labels)
+    # print(outputs)
+    intersection = (outputs & labels).float().sum((1, 2, 3))  # Will be zero if Truth=0 or Prediction=0
+    union = (outputs | labels).float().sum((1, 2, 3))         # Will be zzero if both are 0
     
     iou = (intersection + SMOOTH) / (union + SMOOTH)  # We smooth our devision to avoid 0/0
-#     print(iou)
-    thresholded = torch.clamp(20 * (iou - 0.5), 0, 10).ceil() / 10  # This is equal to comparing with thresolds
-    
-    return thresholded, iou 
         
+    return sum(iou)/outputs.shape[0]  # Or thresholded.mean() if you are interested in average across the batch
+
